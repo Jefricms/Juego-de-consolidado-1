@@ -16,6 +16,10 @@ public class Player : MonoBehaviour
     private int coins;
     public TMP_Text textoCoins;
 
+    // --- VARIABLES DE VIDAS (ESTÁTICA PARA QUE NO SE REINICIEN AL RECARGAR ESCENA) ---
+    public static int vidas = 3;
+    public TMP_Text textoVidas;
+
     private Animator animator;
 
     // --- VARIABLES DE AUDIO ---
@@ -27,6 +31,9 @@ public class Player : MonoBehaviour
         rb2D = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
         audioSource = GetComponent<AudioSource>();
+
+        // Actualizar el texto de vidas al iniciar la escena
+        ActualizarTextoVidas();
     }
 
     void Update()
@@ -38,7 +45,6 @@ public class Player : MonoBehaviour
         {
             transform.localScale = new Vector3(Mathf.Sign(move), 1, 1);
 
-            // Si se está moviendo y está en el suelo, reproduce el sonido
             if (isGrounded && footstepSound != null && !audioSource.isPlaying)
             {
                 audioSource.clip = footstepSound;
@@ -47,7 +53,6 @@ public class Player : MonoBehaviour
         }
         else
         {
-            // Si el jugador se detiene, paramos el sonido de inmediato
             if (audioSource.isPlaying)
             {
                 audioSource.Stop();
@@ -71,15 +76,13 @@ public class Player : MonoBehaviour
         {
             Destroy(collision.gameObject);
             coins++;
-            textoCoins.text = coins.ToString();
+            if (textoCoins != null)
+                textoCoins.text = coins.ToString();
         }
         
         if (collision.transform.CompareTag("spikes"))
         {
-            if (animator != null)
-                animator.SetTrigger("Hit");
-            
-            Invoke("ReiniciarEscena", 0.4f);
+            PerderVida();
         }
 
         if (collision.transform.CompareTag("Baril"))
@@ -94,8 +97,44 @@ public class Player : MonoBehaviour
         }
     }
 
+    void PerderVida()
+    {
+        vidas--;
+        ActualizarTextoVidas();
+
+        if (vidas > 0)
+        {
+            if (animator != null)
+                animator.SetTrigger("Hit");
+            
+            Invoke("ReiniciarEscena", 0.4f);
+        }
+        else
+        {
+            if (animator != null)
+                animator.SetTrigger("Hit");
+
+            Invoke("GameOver", 0.4f);
+        }
+    }
+
+    void ActualizarTextoVidas()
+    {
+        if (textoVidas != null)
+        {
+            textoVidas.text = vidas.ToString();
+        }
+    }
+
     void ReiniciarEscena()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    void GameOver()
+    {
+        // Al perder todas las vidas, restablecemos a 3 y mandamos al menú principal (o puedes cambiar el nombre de la escena)
+        vidas = 3;
+        SceneManager.LoadScene(0); // Carga la escena del índice 0 (Menú Principal)
     }
 }
